@@ -1,5 +1,5 @@
 # CTA-ED-exercise2
-In this repository you will find the data and Rmarkdown (Rmd) script for exercise 2 (to be completed for the 14th of February 2024). This is part of the course 'Computational Text Analysis' taught at the University of Edinburgh by Dr. Marion Lieutaud.
+In this repository you will find the data (newstweets.rds) and Rmarkdown (Rmd) script for exercise 2 (to be completed for the 14th of February 2024). This is part of the course 'Computational Text Analysis' taught at the University of Edinburgh by Dr. Marion Lieutaud.
 
 ## Starting instructions
 This is a group exercise. If you have attended the class on the 7th of February, then you know who your group members and you will be working together on this exercise. If you missed the class, then you are working alone for this one.
