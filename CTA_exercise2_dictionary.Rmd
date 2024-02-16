@@ -1,4 +1,14 @@
-# Exercise 2: Dictionary-based methods
+---
+title: "CTA-ED Exercise 2: dictionary-based methods"
+author: "Marion Lieutaud"
+date: "2/14/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 
 *This exercise relied on the twitter API, which is no longer available. However a new version of the academic API appears to have recently been made available again. Unsure how this will develop. We will use twitter data collected in 2020 for this exercise.*
 
@@ -243,13 +253,11 @@ Of course, list- or dictionary-based methods need not only focus on sentiment, e
 A very minimal example would choose, for example, words like "death" and its synonyms and score these all as 1. We would then combine these into a dictionary, which we've called "mordict" here. 
 
 ```{r}
-
 word <- c('death', 'illness', 'hospital', 'life', 'health',
              'fatality', 'morbidity', 'deadly', 'dead', 'victim')
 value <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 mordict <- data.frame(word, value)
 mordict
-
 ```
 
 We could then use the same technique as above to bind these with our data and look at the incidence of such words over time. Combining the sequence of scripts from above we would do the following:
@@ -305,10 +313,9 @@ The above approaches use general dictionary-based techniques that were not desig
 
 We will conduct the analysis using the `quanteda` package. You will see that we can tokenize text in a similar way using functions included in the quanteda package. 
 
-With the `quanteda` package we first need to create a "corpus" object, by declaring our tweets a corpus object. Here, we make sure our date column is correctly stored and then create the corpus object with the `corpus()` function. Note that we are specifying the `text_field` as "tweet" as this is where our text data of interest is, and we are including information on the date that tweet was published. This information is specified with the `docvars` argument. You'll see tthen that the corpus consists of the text and so-called "docvars," which are just the variables (columns) in the original dataset. Here, we have only included the date column.
+With the `quanteda` package we first need to create a "corpus" object, by declaring our tweets a corpus object. Here, we make sure our date column is correctly stored and then create the corpus object with the `corpus()` function. Note that we are specifying the `text_field` as "tweet" as this is where our text data of interest is, and we are including information on the date that tweet was published. This information is specified with the `docvars` argument. You'll see then that the corpus consists of the text and so-called "docvars," which are just the variables (columns) in the original dataset. Here, we have only included the date column.
 
 ```{r}
-
 tweets$date <- as.Date(tweets$created_at)
 
 tweet_corpus <- corpus(tweets, text_field = "tweet", docvars = "date")
@@ -318,7 +325,6 @@ tweet_corpus <- corpus(tweets, text_field = "tweet", docvars = "date")
 We then tokenize our text using the `tokens()` function from quanteda, removing punctuation along the way:
 ```{r}
 toks_news <- tokens(tweet_corpus, remove_punct = TRUE)
-
 ```
 
 We then take the `data_dictionary_LSD2015` that comes bundled with `quanteda` and and we select only the positive and negative categories, excluding words deemed "neutral." After this, we are ready to "look up" in this dictionary how the tokens in our corpus are scored with the `tokens_lookup()` function. 
@@ -326,7 +332,6 @@ We then take the `data_dictionary_LSD2015` that comes bundled with `quanteda` an
 ```{r}
 # select only the "negative" and "positive" categories
 data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]
-
 toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg)
 ```
 
@@ -355,7 +360,6 @@ abline(h = 0, lty = 2)
 Alternatively, we can recreate this in tidy format as follows:
 
 ```{r}
-
 negative <- dfmat_news_lsd@x[1:121]
 positive <- dfmat_news_lsd@x[122:242]
 date <- dfmat_news_lsd@Dimnames$docs
@@ -375,13 +379,154 @@ And plot accordingly:
 tidy_sent %>%
   ggplot() +
   geom_line(aes(date, sentiment))
-
 ```
 
 ## Exercises
 
 1. Take a subset of the tweets data by "user_name" These names describe the name of the newspaper source of the Twitter account. Do we see different sentiment dynamics if we look only at different newspaper sources?
+```{r}
+# go back to token element and inspect docvars
+docvars(toks_news) # ok all docvars are there
+
+# look at how many different newspaper we have in the dataset
+unique(docvars(toks_news)$username)
+```
+
+```{r}
+# recreate a document-feature matrix but instead of grouping it by date, we group it by 'username' (aka newspapers)
+dfm_news_lsd <- dfm(toks_news_lsd) %>% 
+  dfm_group(groups = username) 
+
+# convert it to a dataframe so it's easier to use
+tidy_dfm_news_lsd <- dfm_news_lsd %>%
+  convert(to = "data.frame") %>%
+  rename("newspaper" = doc_id) %>% # when converting to data.frame, R called our grouping variable 'doc_id'. We rename it 'newspaper' instead.
+  mutate(sentiment = positive - negative) # create variable for overall sentiment
+
+# plot by newspaper
+tidy_dfm_news_lsd %>%
+  ggplot() + # when we enter ggplot environment we need to use '+' not '%>%', 
+  geom_point(aes(x=reorder(newspaper, -sentiment), y=sentiment)) + # reordering newspaper variable so it is displayed from most negative to most positive
+  coord_flip() + # pivot plot by 90 degrees
+  xlab("Newspapers") + # label x axis
+  ylab("Overall tweet sentiment (negative to positive)") + # label y axis
+  theme_minimal() # pretty graphic theme
+```
+Difficult to interpret... Tabloids (The Daily Mirror, the Sun and the Daily Mail) seems to write overall more negative tweets than more traditional newspapers. This is especially true for The Daily Mirror. Overall it may be interesting to note that the more left-leaning papers (the Daily Mirror and the Guardian) also appear the most negative within their respective genre (tabloids and non-tabloid newspapers).
+
+
+Because many of you tried to analyse sentiment not just by newspaper but by newspaper 
+_and_ by date, I include code to do this.
+```{r}
+# recreate a document-feature matrix but instead of grouping it by date, we group it by 'username' (aka newspapers)
+dfm_news_lsd <- dfm(toks_news_lsd) %>% 
+  dfm_group(groups = interaction(username, date)) # we group by interaction variable between newspaper and date
+
+# convert it to a dataframe so it's easier to use
+tidy_dfm_news_lsd <- dfm_news_lsd %>%
+  convert(to = "data.frame") 
+
+head(tidy_dfm_news_lsd) # inspect
+# the interaction has batched together newspaper name and date (e.g. DailyMailUK.2020-01-01). 
+
+#We want to separate them into two distinct variables. We can do it using the command extract() and regex. It's easy because the separation is always a .
+tidy_dfm_news_lsd <- tidy_dfm_news_lsd %>%
+  extract(doc_id, into = c("newspaper", "date"), regex = "([a-zA-Z]+)\\.(.+)") %>%
+  mutate(date = as.Date(date)) # clarify to R that this variable is a date
+
+head(tidy_dfm_news_lsd) # inspect
+# nice! now we again have two distinct clean variables called 'newspaper' and 'date'.
+
+tidy_dfm_news_lsd <- tidy_dfm_news_lsd %>%
+  mutate(sentiment = positive - negative) # recreate variable for overall sentiment
+
+
+tidy_dfm_news_lsd %>%
+  ggplot(aes(x=date, y=sentiment)) +
+  geom_point(alpha=0.5) + # plot points
+  geom_smooth(method= loess, alpha=0.25) + # plot smooth line
+  facet_wrap(~newspaper) + # 'facetting' means multiplying the plots so that there is one plot for each member of the group (here, sentiment) that way you can easily compare trend across group.
+  xlab("date") + ylab("overall sentiment (negative to positive)") +
+  ggtitle("Tweet sentiment trend across 8 British newspapers") +
+  theme_minimal()
+```
+
 2. Build your own (minimal) dictionary-based filter technique and plot the result
+```{r}
+trans_words <- c('trans', 'transgender', 'trans rights', 'trans rights activists', 'transphobic', 'terf', 'terfs', 'transphobia', 'transphobes', 'gender critical', 'LGBTQ', 'LGBTQ+')
+
+#get total tweets per day (no missing dates so no date completion required)
+totals_newspaper <- tidy_tweets %>%
+  mutate(obs=1) %>%
+  group_by(newspaper) %>%
+  summarise(sum_words = sum(obs))
+
+#plot
+tidy_tweets %>%
+  mutate(obs=1) %>%
+  filter(grepl(paste0(trans_words, collapse = "|"), word, ignore.case = T)) %>%
+  group_by(newspaper) %>%
+  summarise(sum_mwords = sum(obs)) %>%
+  full_join(totals_newspaper, word, by="newspaper") %>%
+  mutate(sum_mwords= ifelse(is.na(sum_mwords), 0, sum_mwords),
+         pcttranswords = sum_mwords/sum_words) %>%
+  ggplot(aes(x=reorder(newspaper, -pcttranswords), y=pcttranswords)) +
+  geom_point() +
+  xlab("newspaper") + ylab("% words referring to trans or terfs") +
+  coord_flip() +
+  theme_minimal()
+```
+The Sun looks like it discusses trans people and trans rights (or transphobia) particularly often.
+
+```{r}
+# I'm gonna create a dictionary with two categories (it could be only one but I'm feeling fancy), one for words referring to trans people, and one for words referring to transphobes/anti-trans rights
+trans_dict <- dictionary(list(trans = c('trans', 'transgender', 'trans rights', 'trans rights activists', 'LGBTQ', 'LGBTQ+'),
+                              terf = c('transphobic', 'terf', 'terfs', 'transphobia', 'transphobes', 'gender critical')))
+
+# back to tokens object
+dfm_dict_trans <- toks_news %>%
+  tokens_lookup(dictionary = trans_dict) %>% # look up the occurrence of my dictionaries
+  dfm() %>% # turn into dfm
+  dfm_group(groups = username) %>% # group by newspaper
+  convert(to = "data.frame") %>% # convert it to a dataframe
+  rename("newspaper" = doc_id) %>% # rename variable 
+  full_join(totals_newspaper, word, by="newspaper")
+  
+# then just tweak the same code as before
+tidy_dfm_trans <- dfm_trans %>% 
+  dfm_group(groups = newspaper) %>% # we group by newspaper
+  convert(to = "data.frame") %>% # convert it to a dataframe
+  rename("newspaper" = doc_id) # rename variable
+
+# plot by newspaper
+tidy_dfm_trans %>%
+  ggplot() + # when we enter ggplot environment we need to use '+' not '%>%', 
+  geom_point(aes(x=reorder(newspaper, -sentiment), y=sentiment)) + # reordering newspaper variable so it is displayed from most negative to most positive
+  coord_flip() + # pivot plot by 90 degrees
+  xlab("Newspapers") + # label x axis
+  ylab("Overall tweet sentiment (negative to positive)") + # label y axis
+  theme_minimal() # pretty graphic theme
+```
+
+
+```{r}
+#plot
+tidy_tweets %>%
+  mutate(obs=1) %>%
+  filter(grepl(paste0(mordict, collapse = "|"), word, ignore.case = T)) %>%
+  group_by(date) %>%
+  summarise(sum_mwords = sum(obs)) %>%
+  full_join(totals, word, by="date") %>%
+  mutate(sum_mwords= ifelse(is.na(sum_mwords), 0, sum_mwords),
+         pctmwords = sum_mwords/sum_words) %>%
+  ggplot(aes(date, pctmwords)) +
+  geom_point(alpha=0.5) +
+  geom_smooth(method= loess, alpha=0.25) +
+  xlab("Date") + ylab("% mortality words")
+
+
+```
+
 3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
 4. Don't forget to 'knit' to produce your final html output for the exercise.
 
