@@ -1,5 +1,5 @@
 # CTA-ED-exercise2
-In this repository you will find the material for exercise 2 (to be completed for the 12th of February 2024). This is part of the course 'Computational Text Analysis' taught at the University of Edinburgh by Dr. Marion Lieutaud. There is no datafile in this repository as the code in the Rmd script will show you how to download it directly.
+In this repository you will find the material for exercise 2 (to be completed for the 12th of February 2025). This is part of the course 'Computational Text Analysis' taught at the University of Edinburgh by Dr. Marion Lieutaud. There is no datafile in this repository as the code in the Rmd script will show you how to download it directly.
 
 ## Starting instructions
 This is a group exercise. If you have attended the class on the 5th of February, then you know who your group members and you will be working together on this exercise. If you missed the class, then you will be doing this exercise alone.
