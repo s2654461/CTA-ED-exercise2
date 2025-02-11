@@ -314,10 +314,6 @@ The above approaches use general dictionary-based techniques that were not desig
 We will conduct the analysis using the `quanteda` package. You will see that we can tokenize text in a similar way using functions included in the quanteda package. 
 
 With the `quanteda` package we first need to create a "corpus" object, by declaring our tweets a corpus object. Here, we make sure our date column is correctly stored and then create the corpus object with the `corpus()` function. Note that we are specifying the `text_field` as "tweet" as this is where our text data of interest is, and we are including information on the date that tweet was published. This information is specified with the `docvars` argument. You'll see then that the corpus consists of the text and so-called "docvars," which are just the variables (columns) in the original dataset. Here, we have only included the date column.
-```{r}
-library(quanteda)
-```
-
 
 ```{r}
 tweets$date <- as.Date(tweets$created_at)
