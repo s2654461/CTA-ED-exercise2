@@ -528,5 +528,101 @@ tidy_tweets %>%
 ```
 
 3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
+
+# First recreate the corpus and tokens as before
+
+```{r}
+tweets$date <- as.Date(tweets$created_at)
+tweet_corpus <- corpus(tweets, text_field = "tweet", 
+                      docvars = c("date", "username")) # Add username as docvar
+```
+
+# Create tokens
+
+```{r}
+toks_news <- tokens(tweet_corpus, remove_punct = TRUE)
+```
+
+
+# Select positive and negative categories from Lexicoder
+```{r}
+data_dictionary_LSD2015_pos_neg <- data_dictionary_LSD2015[1:2]
+toks_news_lsd <- tokens_lookup(toks_news, dictionary = data_dictionary_LSD2015_pos_neg)
+```
+
+
+# Create document-feature matrix grouped by newspaper (username)
+```{r}
+dfmat_news_lsd_by_paper <- dfm(toks_news_lsd) %>% 
+  dfm_group(groups = username)
+```
+
+
+# Convert to dataframe for easier manipulation and plotting
+```{r}
+sentiment_by_paper <- convert(dfmat_news_lsd_by_paper, to = "data.frame") %>%
+  rename(newspaper = doc_id) %>%
+  mutate(sentiment = positive - negative)
+```
+
+
+# Create visualization
+```{r}
+ggplot(sentiment_by_paper, aes(x = reorder(newspaper, sentiment), y = sentiment)) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "Newspaper",
+       y = "Overall Sentiment (Positive - Negative)",
+       title = "Sentiment Analysis of UK Newspaper Tweets",
+       subtitle = "Using Lexicoder Sentiment Dictionary") +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+
+# Let's also look at the time trends for each newspaper
+```{r}
+dfmat_news_lsd_by_paper_time <- dfm(toks_news_lsd) %>% 
+  dfm_group(groups = interaction(username, date))
+```
+
+
+# Convert to dataframe and prepare for plotting
+```{r}
+sentiment_by_paper_time <- convert(dfmat_news_lsd_by_paper_time, to = "data.frame") %>%
+  separate(doc_id, into = c("newspaper", "date"), sep = "\\.") %>%
+  mutate(date = as.Date(date),
+         sentiment = positive - negative)
+```
+
+
+# Create time series plot by newspaper
+```{r}
+ggplot(sentiment_by_paper_time, aes(x = date, y = sentiment, color = newspaper)) +
+  geom_smooth(method = "loess", se = FALSE) +
+  theme_minimal() +
+  labs(x = "Date",
+       y = "Sentiment Score",
+       title = "Sentiment Trends by Newspaper Over Time",
+       color = "Newspaper") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold"))
+```
+
+
+# Finally, let's look at the faceted version for clearer comparison
+```{r}
+ggplot(sentiment_by_paper_time, aes(x = date, y = sentiment)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "loess", se = FALSE) +
+  facet_wrap(~newspaper, scales = "free_y") +
+  theme_minimal() +
+  labs(x = "Date",
+       y = "Sentiment Score",
+       title = "Sentiment Trends by Newspaper",
+       subtitle = "Individual trends for each newspaper") +
+  theme(plot.title = element_text(face = "bold"))
+```
+
 4. Don't forget to 'knit' to produce your final html output for the exercise.
 
