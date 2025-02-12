@@ -528,7 +528,6 @@ tidy_tweets %>%
 ```
 
 3. Apply the Lexicoder Sentiment Dictionary to the news tweets, but break down the analysis by newspaper
-
 # First recreate the corpus and tokens as before
 
 ```{r}
@@ -623,6 +622,5 @@ ggplot(sentiment_by_paper_time, aes(x = date, y = sentiment)) +
        subtitle = "Individual trends for each newspaper") +
   theme(plot.title = element_text(face = "bold"))
 ```
-
 4. Don't forget to 'knit' to produce your final html output for the exercise.
 
